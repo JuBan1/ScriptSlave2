@@ -1,0 +1,31 @@
+file_body:		func_def*
+
+func_def:		type ident '(' param_list ')' { stmt_list }
+
+param_list:		param (, param)*
+param_list:		e
+param:			type ident	
+
+arg_list:		expr (, expr)*
+arg_list:		e	
+
+stmt_list:		stmt*
+
+stmt:			while ( expr ) stmt
+stmt:			if '(' expr ')' stmt else stmt
+stmt:			if '(' expr ')' stmt
+
+stmt:			ident = expr ;
+stmt:			ident '(' arg_list ')' ;
+stmt:			break ;
+stmt:			return ;
+stmt:			return expr ;
+stmt:			type ident = expr;
+stmt:			type ident ;
+
+stmt:			{ stmt_block }
+
+stmt_block:		stmt*
+
+
+expr:			..
