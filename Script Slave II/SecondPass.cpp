@@ -143,7 +143,7 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 			AddError(n->GetCallee()->GetToken(), "Symbol '%s' is not a function, but used as one.", calleeSym->name.c_str());
 			return nullptr;
 		}
-
+		
 		p->SetTypeInfo(calleeSym->funcNode->GetRetType()->GetTypeInfo());
 
 		//check arguments
@@ -160,7 +160,7 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 			TypeInfo const* required = params[i]->GetType()->GetTypeInfo();
 
 			if (actual != required){
-				AddError(params[i]->GetToken(), "%dth argument is type '%s' but must be of type '%s'.", i+1, required->name.c_str(), actual->name.c_str());
+				AddError(args[i]->GetToken(), "%dth argument is type '%s' but must be of type '%s'.", i+1, required->name.c_str(), actual->name.c_str());
 				//return p->GetTypeInfo();
 			}
 		}
@@ -274,7 +274,7 @@ void SecondPass::outNode(StmtFuncCall* n, bool last){
 		TypeInfo const* required = params[i]->GetType()->GetTypeInfo();
 
 		if (actual != required){
-			AddError(n->GetToken(), "%dth argument is type '%s' but must be of type '%s'.", i + 1, required->name.c_str(), actual->name.c_str());
+			AddError(args[i]->GetToken(), "%dth argument is type '%s' but must be of type '%s'.", i + 1, required->name.c_str(), actual->name.c_str());
 			//return;
 		}
 	}

@@ -128,29 +128,31 @@ template<classE> static Expected<T> fromException(const E& exception){
 
 
 void GetFormattedTokenStringForError(Token t, std::vector<Token>& tokens){
-	size_t itt = std::find_if(tokens.begin(), tokens.end(), [&t](const Token& tok)
+	auto it = std::find_if(tokens.begin(), tokens.end(), [&t](const Token& tok)
 	{ 
 		return t.filePosition.line == tok.filePosition.line &&
 			t.filePosition.pos == tok.filePosition.pos;
-	}) - tokens.begin();
-
-
-	//size_t itt = 25;
-	int line = tokens[itt].filePosition.line;
-
-	//convert them into indices instead?
-	auto f = std::find_if(tokens.rbegin() + (tokens.size() - itt), tokens.rend(), [line](const Token& t){ return t.filePosition.line < line; });
-	auto l = std::find_if(tokens.begin() + itt, tokens.end(), [line](const Token& t){ return t.filePosition.line > line; });
-
-	int c = tokens.begin() + itt - f.base();
-	int vv = c;
-	size_t count = 0;
-	std::for_each(f.base(), l, [&count, &c](const Token& t){
-		std::cout << t.GetTokenValue() << " ";
-		if (c>0)
-			count += t.GetTokenValue().size() + 1;
-		--c;
 	});
+
+	if (it == tokens.end())
+		throw std::invalid_argument("Token not found");
+
+	size_t mid = it - tokens.begin();
+
+	int line = tokens[mid].filePosition.line;
+
+	//Get start and end index of line. So [beg,end) are all tokens on line 'line'.
+	size_t beg = [&](){ int it = mid; while (it >= 0 && tokens[it].filePosition.line == line) --it; return it; }() + 1; //counts one too far to the left, so +1
+	size_t end = [&](){ int it = mid; while (tokens[it].filePosition.line == line) ++it; return it; }();
+
+	size_t count = 0;
+	for (size_t i = beg; i < end; ++i){
+		const Token& t = tokens[i];
+		std::cout << t.GetTokenValue() << " ";
+
+		if (i<mid)
+			count += t.GetTokenValue().size() + 1;
+	}
 	std::cout << "\n";
 	std::string ws(count, ' ');
 	std::cout << ws << "^\n";
@@ -221,12 +223,15 @@ void compile(std::string fileName, bool printLiveness = false){
 		else if( success ){
 			const auto& err = ts.GetErrorInfo(); //Error info is a tuple of <previous token, erroneous token, production rule>
 			std::cout << "End of program found, but not all input was consumed. Last Token read is \"" << std::get<1>(err)->GetTokenValue() << "\".\n";
+			GetFormattedTokenStringForError(*std::get<1>(err), tokens);
 		}else{
 			const auto& err = ts.GetErrorInfo();
 			if( std::get<0>(err) == 0 )
 				std::cout << "Cannot parse Token \"" << std::get<1>(err)->GetTokenValue() << "\" in " << std::get<2>(err) << ".\n";
 			else
 				std::cout << "Cannot parse Token \"" << std::get<1>(err)->GetTokenValue() << "\" after Token \"" << std::get<0>(err)->GetTokenValue() << "\" in " << std::get<2>(err) << ".\n";
+
+			GetFormattedTokenStringForError(*std::get<1>(err), tokens);
 		}
 			
 		return;
@@ -258,8 +263,12 @@ void compile(std::string fileName, bool printLiveness = false){
 	firstPass.Process(start);
 
 	for (auto&& error : firstPass.GetErrors()){
-		std::cout << error << "\n";
+		std::cout << error.second.filePosition.ToString() << " " << error.first << "\n";
+		GetFormattedTokenStringForError(error.second, tokens);
 	}
+
+	if (firstPass.GetErrors().size() > 0)
+		return;
 
 	std::cout << std::endl;
 
@@ -269,6 +278,7 @@ void compile(std::string fileName, bool printLiveness = false){
 
 	//Second pass:
 	// Check if all ident-nodes are known variables
+	// Deduce types of all expression nodes
 	SecondPass secondPass(typeTable, globalScope);
 	secondPass.Process(start);
 

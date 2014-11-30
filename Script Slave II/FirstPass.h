@@ -3,8 +3,7 @@
 #include "BaseVisitor.h"
 #include "TypeTable.h"
 #include "SymbolScope.h"
-
-#include <iostream>
+#include "StringUtil.h"
 
 class FirstPass : public BaseVisitor
 {
@@ -17,19 +16,41 @@ public:
 		start->accept(this, false);
 	}
 
-	const std::vector<std::string>& GetErrors() const {
+	const std::vector<std::pair<std::string, Token>>& GetErrors() const {
 		return m_errors;
+	}
+
+	virtual bool inNode(GlobVarDef* n, bool last) override {
+		auto type = m_typeTable.Get(n->GetType()->GetName());
+
+		if (!type){
+			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
+			return false;
+		}
+		else if (type->size == 0){
+			AddError(n->GetToken(), "Type '%s' can not be used.", n->GetType()->GetName().c_str());
+			return false;
+		}
+
+		n->GetType()->SetTypeInfo(type);
+
+		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateGlobalVariableSymbol(n));
+
+		if (!success)
+			AddError(n->GetToken(), "Symbol '%s' is already in use.", n->GetType()->GetName().c_str());
+
+		return true; //return true so we also walk through the children of n
 	}
 
 	virtual bool inNode(StmtVarDecl* n, bool last) override {
 		auto type = m_typeTable.Get(n->GetType()->GetName());
 
 		if (!type){
-			m_errors.emplace_back("Unknown type: " + n->GetType()->GetName());
+			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
 			return false;
 		}
 		else if (type->size == 0){
-			m_errors.emplace_back("Bad type: " + n->GetType()->GetName());
+			AddError(n->GetToken(), "Type '%s' can not be used.", n->GetType()->GetName().c_str());
 			return false;
 		}
 
@@ -38,7 +59,7 @@ public:
 		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateVariableSymbol(n));
 
 		if (!success)
-			m_errors.emplace_back("Variable name already in use: " + n->GetName()->GetName());
+			AddError(n->GetToken(), "Symbol '%s' is already in use.", n->GetType()->GetName().c_str());
 
 		return true; //return true so we also walk through the children of n
 	}
@@ -61,7 +82,7 @@ public:
 		auto retType = m_typeTable.Get(n->GetRetType()->GetName());
 
 		if (!retType){
-			m_errors.emplace_back("Unknown return type: " + n->GetRetType()->GetName());
+			AddError(n->GetToken(), "Unknown return type '%s'.", n->GetRetType()->GetName().c_str());
 			return true;
 		}
 
@@ -70,7 +91,7 @@ public:
 		bool success = m_globalScope.AddSymbol(n->GetName()->GetName(), Symbol::CreateFunctionSymbol(n));
 
 		if (!success){
-			m_errors.emplace_back("Function name already in use: " + n->GetName()->GetName());
+			AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());
 			return false; //Do not continue if function name is redeclared.
 		}
 			
@@ -82,7 +103,7 @@ public:
 		success = m_currentScope->AddSymbol(retValName, Symbol::CreateReturnValueSymbol(retValName, n->GetRetType()));
 
 		if (!success){
-			m_errors.emplace_back("Name for return value already in use: " + n->GetName()->GetName());
+			AddError(n->GetToken(), "Could not generate symbol for return value in '%s'.", n->GetName()->GetName().c_str());
 			return false; //Do not continue if function name is redeclared.
 		}
 
@@ -90,7 +111,7 @@ public:
 			auto paramType = m_typeTable.Get(param->GetType()->GetName());
 
 			if (!paramType){
-				m_errors.emplace_back("Unknown parameter type: " + n->GetRetType()->GetName());
+				AddError(n->GetToken(), "Unknown parameter type '%s'.", n->GetRetType()->GetName());
 				return true;
 			}
 
@@ -98,7 +119,7 @@ public:
 			bool success = m_currentScope->AddSymbol(param->GetName()->GetName(), Symbol::CreateParamSymbol(param.get()));
 
 			if (!success)
-				m_errors.emplace_back("Parameter name already in use: " + n->GetName()->GetName());
+				AddError(n->GetToken(), "Symbol '%s' already in use.", n->GetName()->GetName());
 		}
 
 		return true;
@@ -128,16 +149,26 @@ public:
 		return false;
 	}
 
-	virtual bool inNode(StmtBreak* n, bool last){ if(m_breakDepth == 0) m_errors.emplace_back("Invalid break statement"); return false; }
+	virtual bool inNode(StmtBreak* n, bool last){ if (m_breakDepth == 0) AddError(n->GetToken(), "Break outside of loop."); return false; }
 	virtual void outNode(StmtBreak* n, bool last){ }
 
 	virtual bool inNode(StmtWhile* n, bool last){ m_breakDepth++; return true; }
 	virtual void outNode(StmtWhile* n, bool last){ m_breakDepth--; }
 
 private:
+
+	void AddError(const Token& tok, const std::string fmt_str, ...){
+		va_list ap;
+		va_start(ap, fmt_str);
+		std::string v = va_string_format(fmt_str, ap);
+		m_errors.emplace_back(v, tok);
+		va_end(ap);
+	}
+
+
 	int m_breakDepth = 0;
 
-	std::vector<std::string> m_errors;
+	std::vector<std::pair<std::string, Token>> m_errors;
 	TypeTable& m_typeTable;
 	SymbolScope& m_globalScope;
 	SymbolScope* m_currentScope;

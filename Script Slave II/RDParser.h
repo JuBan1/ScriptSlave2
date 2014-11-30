@@ -24,7 +24,7 @@ TokenStack* g_tokenStack;
 std::string g_prodName;
 
 bool match_type(TypePtr& node){
-	Token& t = g_tokenStack->GetNextToken(g_prodName);
+	const Token& t = g_tokenStack->GetNextToken(g_prodName);
 
 	if (t.type == TokenType::Ident){
 		node = std::make_unique<Type>(t.GetTokenValue());
@@ -35,7 +35,7 @@ bool match_type(TypePtr& node){
 }
 
 bool match_ident( IdentPtr& node ){
-	Token& t = g_tokenStack->GetNextToken( g_prodName );
+	const Token& t = g_tokenStack->GetNextToken( g_prodName );
 
 	if (t.type == TokenType::Ident){
 		node = std::make_unique<Ident>(t.GetTokenValue());
@@ -201,7 +201,7 @@ bool match_stmt( StmtPtr& in ){
 		);
 	}
 
-	return false;
+	MATCH_RETURN
 }
 
 bool match_stmtblock( StmtBlockPtr& in ){
@@ -225,7 +225,7 @@ bool match_param( ParamPtr& in ){
 		match_type( node->GetTypeRef() ) &&
 		match_ident( node->GetNameRef() )
 	);
-
+	
 	MATCH_RETURN;
 }
 
@@ -261,6 +261,32 @@ bool match_func_def( FuncDefPtr& in ){
 	MATCH_RETURN;
 }
 
+bool match_global_stmt(GlobalStmtPtr& in){
+
+	{
+		PREPARE_NODE(FuncDef);
+		TRY_MATCH(
+			match_type(node->GetRetTypeRef()) &&
+			match_ident(node->GetNameRef()) &&
+			match(LParen) &&
+			match_param_list(node->GetParamListRef()) &&
+			match(RParen) &&
+			match_stmtblock(node->GetStmtBlockRef())
+			);
+	}
+
+	{
+		PREPARE_NODE(GlobVarDef);
+		TRY_MATCH(
+			match_type(node->GetTypeRef()) &&
+			match_ident(node->GetNameRef()) &&
+			match(Semicolon)
+		);
+	}
+	
+	MATCH_RETURN;
+}
+
 bool match_start( TokenStack& ts,  StartBlockPtr& in ){
 	g_exprParser = new ExprParser( ts );
 	g_tokenStack = &ts;
@@ -271,7 +297,7 @@ bool match_start( TokenStack& ts,  StartBlockPtr& in ){
 
 	TRY_MATCH(
 		STAR(
-			match_func_def(node->Push())
+			match_global_stmt(node->Push())
 		)
 	);
 

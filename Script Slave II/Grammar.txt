@@ -1,5 +1,9 @@
-file_body:		func_def*
+file_body:		global_def*
 
+global_decl:	glob_var_def
+global_decl:	func_def
+
+glob_var_def:	type ident ;
 func_def:		type ident '(' param_list ')' { stmt_list }
 
 param_list:		param (, param)*

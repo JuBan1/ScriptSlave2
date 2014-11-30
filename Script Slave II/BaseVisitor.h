@@ -7,7 +7,7 @@ const auto end = children.end(); \
 for( auto it = children.begin(); it != children.end(); ++it ){ \
 	(*it)->accept( this, it == end - 1 ); \
 }
-#define INNODE if( !inNode(n,last) ){ outNode(n,last); return; }
+#define INNODE if( !inNode(n,last) ) return; //{ outNode(n,last); return; }
 #define OUTNODE outNode(n,last);
 
 class ASTNode;
@@ -33,10 +33,13 @@ class StmtIfThenElse;
 class StmtFuncCall;
 class StmtVarDecl;
 class StmtBlock;
+//GlobalStmt
+class GlobalStmt;
+class GlobVarDef;
+class FuncDef;
 //Others
 class StartBlock;
 class IdentList;
-class FuncDef;
 class Param;
 class ParamList;
 
@@ -75,11 +78,15 @@ public:
 	ADD_VISITEE(StmtVarDecl, Stmt);
 	ADD_VISITEE(StmtBlock, Stmt);
 
+	//GlobalStmt
+	ADD_VISITEE(GlobalStmt, ASTNode);
+	ADD_VISITEE(GlobVarDef, GlobalStmt);
+	ADD_VISITEE(FuncDef, GlobalStmt);
+
 	//Others
 	ADD_VISITEE(ArgList, ASTNode);
 	ADD_VISITEE(StartBlock, ASTNode);
 	ADD_VISITEE(IdentList, ASTNode);
-	ADD_VISITEE(FuncDef, ASTNode);
 	ADD_VISITEE(Param, ASTNode);
 	ADD_VISITEE(ParamList, ASTNode);
 

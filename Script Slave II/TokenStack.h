@@ -28,7 +28,7 @@ public:
 		m_indices.pop();
 	}
 
-	Token& GetNextToken( std::string prodName ){
+	const Token& GetNextToken( std::string prodName ){
 		if( m_highestIndex < m_currIndex ){
 			m_highestProductionName = prodName;
 			m_highestIndex = m_currIndex;
@@ -36,11 +36,11 @@ public:
 		return m_tokens[m_currIndex++];
 	}
 
-	Token& GetCurrentToken(){
+	const Token& GetCurrentToken(){
 		return m_tokens[m_currIndex];
 	}
 
-	Token& GetFurthestToken(){
+	const Token& GetFurthestToken(){
 		return m_tokens[m_highestIndex];
 	}
 	std::string GetFurthestProductionName(){
@@ -51,7 +51,7 @@ public:
 		m_highestProductionName = name;
 	}
 
-	std::tuple< Token*, Token*, std::string> GetErrorInfo(){
+	std::tuple<const Token*,const Token*, std::string> GetErrorInfo(){
 		if( m_highestIndex > 0 )
 			return std::make_tuple( &m_tokens[m_highestIndex - 1], &m_tokens[m_highestIndex], m_highestProductionName );
 		else
@@ -67,7 +67,7 @@ private:
 	std::string m_highestProductionName;
 	int m_currIndex;
 	std::stack<int> m_indices;
-	std::vector<Token> m_tokens;
+	const std::vector<Token>& m_tokens;
 };
 
 #endif

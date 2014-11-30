@@ -120,7 +120,7 @@ ExprPtr ExprParser::lparen_led( ExprPtr left ){
 
 	std::unique_ptr<ArgList> list = std::make_unique<ArgList>( );
 	std::unique_ptr<FuncCallExpr> n = std::make_unique<FuncCallExpr>((std::unique_ptr<Ident>&&)std::move(left), std::move(list));
-	
+	n->SetToken(n->GetCallee()->GetToken());
 
 	if (AdvanceToken(TokenType::RParen))
 		return std::move( n );
@@ -182,7 +182,7 @@ ExprPtr ExprParser::nud( Token self ){
 	if( it != m_rules.end() )
 		return (this->*it->second.mNud)(self);
 	else
-		throw std::runtime_error( "nud: Unrecognized token." );
+		throw std::runtime_error( "nud: Unexpected token." );
 }
 
 ExprPtr ExprParser::led( Token self, ExprPtr left ){
@@ -191,7 +191,7 @@ ExprPtr ExprParser::led( Token self, ExprPtr left ){
 	if( it != m_rules.end() )
 		return (this->*it->second.mLed)(std::move( left ));
 	else
-		throw std::runtime_error( "led: Unrecognized token." );
+		throw std::runtime_error( "led: Unexpected token." );
 	
 }
 
@@ -211,34 +211,35 @@ ExprParser::ExprParser( TokenStack& tokens )
 {
 #define ADD_RULE(type, lbp, nud, led) m_rules.insert( std::make_pair( TokenType::type, TokenRule( lbp, nud, led ) ) );
 	ADD_RULE( IntLit, 0, &ExprParser::integer_nud, &ExprParser::default_led );
-	ADD_RULE( FloatLit, 0, &ExprParser::float_nud, &ExprParser::default_led );
-	ADD_RULE( BoolLit, 0, &ExprParser::boolean_nud, &ExprParser::default_led );
-	ADD_RULE( StringLit, 0, &ExprParser::string_nud, &ExprParser::default_led );
+	ADD_RULE(FloatLit, 0, &ExprParser::float_nud, &ExprParser::default_led);
+	ADD_RULE(BoolLit, 0, &ExprParser::boolean_nud, &ExprParser::default_led);
+	ADD_RULE(StringLit, 0, &ExprParser::string_nud, &ExprParser::default_led);
 	ADD_RULE(Ident, 0, &ExprParser::ident_nud, &ExprParser::default_led);
 
-	ADD_RULE( LThan, 5, &ExprParser::default_nud, &ExprParser::lthan_led );
-	ADD_RULE( LThanEq, 5, &ExprParser::default_nud, &ExprParser::lthaneq_led );
-	ADD_RULE( Equal, 5, &ExprParser::default_nud, &ExprParser::equal_led );
-	ADD_RULE( Unequal, 5, &ExprParser::default_nud, &ExprParser::unequal_led );
-	ADD_RULE( GThan, 5, &ExprParser::default_nud, &ExprParser::gthan_led );
-	ADD_RULE( GThanEq, 5, &ExprParser::default_nud, &ExprParser::gthaneq_led );
+	ADD_RULE(LThan, 5, &ExprParser::default_nud, &ExprParser::lthan_led);
+	ADD_RULE(LThanEq, 5, &ExprParser::default_nud, &ExprParser::lthaneq_led);
+	ADD_RULE(Equal, 5, &ExprParser::default_nud, &ExprParser::equal_led);
+	ADD_RULE(Unequal, 5, &ExprParser::default_nud, &ExprParser::unequal_led);
+	ADD_RULE(GThan, 5, &ExprParser::default_nud, &ExprParser::gthan_led);
+	ADD_RULE(GThanEq, 5, &ExprParser::default_nud, &ExprParser::gthaneq_led);
 
-	ADD_RULE( And, 20, &ExprParser::default_nud, &ExprParser::and_led );
-	ADD_RULE( Or, 10, &ExprParser::default_nud, &ExprParser::or_led );
-	ADD_RULE( Not, 0, &ExprParser::not_nud, &ExprParser::default_led );
+	ADD_RULE(And, 20, &ExprParser::default_nud, &ExprParser::and_led);
+	ADD_RULE(Or, 10, &ExprParser::default_nud, &ExprParser::or_led);
+	ADD_RULE(Not, 0, &ExprParser::not_nud, &ExprParser::default_led);
 
-	ADD_RULE( Plus, 10, &ExprParser::add_nud, &ExprParser::add_led );
-	ADD_RULE( Minus, 10, &ExprParser::sub_nud, &ExprParser::sub_led );
-	ADD_RULE( Mul, 20, &ExprParser::default_nud, &ExprParser::mul_led );
-	ADD_RULE( Div, 20, &ExprParser::default_nud, &ExprParser::div_led );
+	ADD_RULE(Plus, 10, &ExprParser::add_nud, &ExprParser::add_led);
+	ADD_RULE(Minus, 10, &ExprParser::sub_nud, &ExprParser::sub_led);
+	ADD_RULE(Mul, 20, &ExprParser::default_nud, &ExprParser::mul_led);
+	ADD_RULE(Div, 20, &ExprParser::default_nud, &ExprParser::div_led);
 
-	ADD_RULE( LParen, 100, &ExprParser::lparen_nud, &ExprParser::lparen_led );
+	//ADD_RULE(Assign, 100, &ExprParser::default_nud, &ExprParser::default_led);
+	ADD_RULE(LParen, 100, &ExprParser::lparen_nud, &ExprParser::lparen_led);
 	//ADD_RULE( RParen, 0, &ExprParser::default_nud, &ExprParser::default_led );
-	ADD_RULE( LBracket, 100, &ExprParser::default_nud, &ExprParser::lbracket_led );
+	ADD_RULE(LBracket, 100, &ExprParser::default_nud, &ExprParser::lbracket_led);
 	//ADD_RULE( RBracket, 0, &ExprParser::default_nud, &ExprParser::default_led );
-	ADD_RULE( Period, 100, &ExprParser::default_nud, &ExprParser::period_led );
-	ADD_RULE( Comma, 0, &ExprParser::default_nud, &ExprParser::default_led );
-	ADD_RULE( Eof, 0, &ExprParser::default_nud, &ExprParser::default_led );
+	ADD_RULE(Period, 100, &ExprParser::default_nud, &ExprParser::period_led);
+	ADD_RULE(Comma, 0, &ExprParser::default_nud, &ExprParser::default_led);
+	ADD_RULE(Eof, 0, &ExprParser::default_nud, &ExprParser::default_led);
 #undef ADD_RULE
 }
 

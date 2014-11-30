@@ -34,23 +34,30 @@ public:
 
 	//attach symbol and typeinfo to every ident
 	virtual bool inNode(Ident* n, bool last) override {
-		Symbol const* sym = m_currentScope->GetSymbol(n->GetName());
+		if (n->GetSymbol() != nullptr)
+			return false; //if ident already has a symbol attached, do not look for one again
 
-		if (sym == nullptr){ //unknown symbol.
-			AddError(n->GetToken(), "Unknown symbol '%s'.", n->GetName().c_str());
-		}
-		//else if (sym->type == Symbol::FUNCTION){
-		//	m_errors.push_back("Function symbol used like variable.");
-		//}
-		else if (sym->type == Symbol::VARIABLE && sym->varNode->GetToken().filePosition > n->GetToken().filePosition) { //If sym->type == PARAMETER, the symbol can't be used
-			AddError(n->GetToken(), "Symbol '%s' used before its declaration in line %d.", n->GetName().c_str(), n->GetToken().filePosition.line);//before it's declaration.
-		}
-		else{
-			n->SetSymbol(sym);
-			n->SetTypeInfo(sym->GetTypeInfo());
-		}
+		FindIdentSymbol(n, SymbolScope::Any);
 
 		return false;
+	}
+
+
+	virtual bool inNode(FuncCallExpr* n, bool last) override {
+		auto callee = n->GetCallee();
+
+		FindIdentSymbol(callee, SymbolScope::Function);
+
+		return true;
+	}
+
+	virtual bool inNode(StmtFuncCall* n, bool last) override {
+		
+		auto callee = n->GetName();
+
+		FindIdentSymbol(callee, SymbolScope::Function);
+
+		return true;
 	}
 
 	virtual void outNode(StmtAssign* n, bool last);
@@ -93,6 +100,22 @@ public:
 	}
 
 private:
+
+	void FindIdentSymbol(Ident* n, SymbolScope::PreferredSymbol ps){
+		Symbol const* sym = m_currentScope->GetSymbol(n->GetName(), ps);
+
+		if (sym == nullptr){ //unknown symbol.
+			AddError(n->GetToken(), "Unknown symbol '%s'.", n->GetName().c_str());
+		}
+		else if (sym->type == Symbol::VARIABLE && sym->varNode->GetToken().filePosition > n->GetToken().filePosition) { //If sym->type == PARAMETER, the symbol can't be used before it's decl.
+			AddError(n->GetToken(), "Symbol '%s' used before its declaration in line %d.", n->GetName().c_str(), n->GetToken().filePosition.line);
+		}
+		else{
+			n->SetSymbol(sym);
+			n->SetTypeInfo(sym->GetTypeInfo());
+		}
+	}
+
 	void AddError(const Token& tok, const std::string fmt_str, ...){
 		va_list ap;
 		va_start(ap, fmt_str);
@@ -104,8 +127,8 @@ private:
 	TypeInfo const* GetResultTypeOf(Expr* p, Symbol const* doNotUse);
 
 	std::vector<std::pair<std::string, Token>> m_errors;
-	TypeTable& m_typeTable;
-	SymbolScope& m_globalScope;
-	SymbolScope* m_currentScope;
+	const TypeTable& m_typeTable;			//Since we're using pointers to TypeInfo, SymbolScope and Symbol objects, these collections must not be modified
+	const SymbolScope& m_globalScope;		//after this stage! Resizing/reordering of the underlying containers might otherwise invalidate the pointers.
+	const SymbolScope* m_currentScope;
 };
 

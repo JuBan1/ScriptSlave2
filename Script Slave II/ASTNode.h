@@ -31,7 +31,8 @@ enum class NodeType{
 	BoolLit,
 	StringLit,
 	FuncDef,
-	FuncBody,
+	GlobVarDef,
+	GlobalStmt,
 	FuncCallExpr,
 
 	StmtBreak,
@@ -68,7 +69,8 @@ static const char* NodeTypeAsString( NodeType op ){
 		CASE_RETURN(StringLit);
 		CASE_RETURN(FloatLit);
 		CASE_RETURN(FuncDef);
-		CASE_RETURN(FuncBody);
+		CASE_RETURN(GlobVarDef);
+		CASE_RETURN(GlobalStmt);
 		CASE_RETURN(FuncCallExpr);
 		CASE_RETURN(StmtBreak);
 		CASE_RETURN(StmtWhile);
@@ -467,7 +469,26 @@ public:
 };
 DEFAULT_TYPEDEF( StmtBlock );
 
-class FuncDef : public ASTNode{
+class GlobalStmt : public ASTNode {
+public:
+	DEFAULT_ACCEPT;
+
+	GlobalStmt(NodeType nt) : ASTNode(nt){}
+};
+DEFAULT_TYPEDEF(GlobalStmt);
+
+class GlobVarDef : public GlobalStmt {
+public:
+	DEFAULT_ACCEPT;
+
+	GET_CHILD(Type, Type);
+	GET_CHILD(Ident, Name);
+
+	DEFAULT_CONSTRUCT(GlobVarDef, GlobalStmt);
+};
+DEFAULT_TYPEDEF(GlobVarDef);
+
+class FuncDef : public GlobalStmt {
 public:
 	DEFAULT_ACCEPT;
 
@@ -476,7 +497,7 @@ public:
 	GET_CHILD(ParamList, ParamList);
 	GET_CHILD(StmtBlock, StmtBlock);
 
-	DEFAULT_CONSTRUCT(FuncDef, ASTNode);
+	DEFAULT_CONSTRUCT(FuncDef, GlobalStmt);
 };
 DEFAULT_TYPEDEF( FuncDef );
 
@@ -484,7 +505,7 @@ class StartBlock : public ASTNode{
 public:
 	DEFAULT_ACCEPT;
 
-	GET_CHILD_ARRAY(FuncDef, Funcs)
+	GET_CHILD_ARRAY(GlobalStmt, GlobalStmts)
 
 	DEFAULT_CONSTRUCT( StartBlock, ASTNode );
 };

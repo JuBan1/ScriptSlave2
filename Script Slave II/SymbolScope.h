@@ -22,6 +22,7 @@ public:
 		FUNCTION,
 		VARIABLE,
 		PARAMETER,
+		GLOBAL_VAR,
 		RETURN_VALUE
 	};
 
@@ -31,6 +32,7 @@ public:
 		ASTNode const* node;
 		FuncDef const* funcNode;
 		StmtVarDecl const* varNode;
+		GlobVarDef const* globVarNode;
 		Type const* retTypeNode;
 		Param const* paramNode;
 	};
@@ -39,6 +41,7 @@ public:
 		switch (type){
 		case FUNCTION:		return funcNode->GetRetType()->GetTypeInfo();
 		case VARIABLE:		return varNode->GetType()->GetTypeInfo();
+		case GLOBAL_VAR:	return globVarNode->GetType()->GetTypeInfo();
 		case PARAMETER:		return paramNode->GetType()->GetTypeInfo();
 		case RETURN_VALUE:	return retTypeNode->GetTypeInfo();
 		default: throw std::invalid_argument("Invalid type of Symbol");
@@ -55,6 +58,10 @@ public:
 
 	static Symbol CreateVariableSymbol(StmtVarDecl const* varNode){
 		return Symbol(VARIABLE, varNode->GetName()->GetName(), varNode);
+	}
+
+	static Symbol CreateGlobalVariableSymbol(GlobVarDef const* globVarNode){
+		return Symbol(GLOBAL_VAR, globVarNode->GetName()->GetName(), globVarNode);
 	}
 
 	static Symbol CreateParamSymbol(Param const* paramNode){
@@ -121,14 +128,21 @@ public:
 		return fullName;
 	}
 
-	Symbol const*	GetSymbol( std::string name );
+	enum PreferredSymbol{
+		Function,
+		Variable,
+		Any
+	};
+
+	Symbol const*	GetSymbol( std::string name, PreferredSymbol ps = Any ) const;
 	bool			AddSymbol( std::string name, Symbol );
 
 	//const std::map<std::string, std::unique_ptr<Symbol>>& GetAllVariables() const { return m_symbols; };
 
 	SymbolScope* GetParentScope() const { return m_parent; }
 
-	SymbolScope* GetSubScope( std::string name );
+	const SymbolScope* GetSubScope( std::string name ) const;
+	SymbolScope* GetSubScope(std::string name);
 
 	bool AddSubScope(std::string name){
 		if (GetSubScope(name)) //No redeclared scopes
@@ -138,7 +152,7 @@ public:
 		return true;
 	}
 
-	void PrintAll(){
+	void PrintAll() const {
 		//std::cout << "== " << GetQualifiedScopeName() << " ==\n";
 		for (auto&& sym : m_symbols)
 			std::cout << sym.second.GetQualifiedSignature() << "\n";

@@ -71,10 +71,9 @@ void BaseVisitor::visit(StmtVarDecl* n, bool last){
 	OUTNODE;
 }
 
-//Others
-
-DEFINE_VISIT_ARRAY( StartBlock, GetChildren() )
-DEFINE_VISIT_ARRAY( IdentList, GetChildren() )
+// GlobalStmt
+DEFINE_DEFAULT_VISIT(GlobalStmt);
+DEFINE_VISIT_2(GlobVarDef, GetType(), GetName())
 
 void BaseVisitor::visit(FuncDef* n, bool last){
 	INNODE;
@@ -84,6 +83,12 @@ void BaseVisitor::visit(FuncDef* n, bool last){
 	ACCEPT(GetStmtBlock(), true);
 	OUTNODE;
 }
+
+
+//Others
+
+DEFINE_VISIT_ARRAY( StartBlock, GetChildren() )
+DEFINE_VISIT_ARRAY( IdentList, GetChildren() )
 
 DEFINE_VISIT_2( Param, GetType(), GetName() )
 DEFINE_VISIT_ARRAY( ParamList, GetChildren() )

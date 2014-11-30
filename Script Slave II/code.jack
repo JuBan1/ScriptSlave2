@@ -1,27 +1,29 @@
-int func(int in1, int in2){
-	int a;
+int func(){
+	/*int a;
 	float b;
 	string c;
-	bool d;
+	bool d;*/
 
-	int func2;
+	if(5+5 == 10 ){
+		glob = 5;
+	}
 	
-	a = a + a - func2 * a / a;
+	/*a = a + a - func2(0, "") + func2 * a / a;
 	b = b + b - b * b / b;
 	c = c + a + b + d;
 	d = ~d || d && d;
 	
-	if( func2 == b ){
+	if( func2 == 5 ){
 	
 	}else{}
 	
 	while(true){
 		int e = "b";
 		e();
-	}
+	}*/
 	
-	func2(0, "");
 	func2("", 0);
+	//func2(0, "");
 }
 
 int func2(int x, string c){
