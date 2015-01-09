@@ -14,10 +14,11 @@ class SymbolScope;
 class Symbol{
 public:
 	//TODO: Make these things const/unmodifyable. Is const ok?
-	std::string name;
+	const std::string name;
 
 	SymbolScope const* scope;
 
+	//TODO: Add a ISymbol interface to specific descendants of ASTNode to get rid of most of the switch boilerplate
 	enum SymbolType{
 		FUNCTION,
 		VARIABLE,
@@ -28,14 +29,9 @@ public:
 
 	SymbolType type;
 
-	union{
-		ASTNode const* node;
-		FuncDef const* funcNode;
-		StmtVarDecl const* varNode;
-		GlobVarDef const* globVarNode;
-		Type const* retTypeNode;
-		Param const* paramNode;
-	};
+	ASTNode const* GetNode() const {
+		return node;
+	}
 
 	TypeInfo const* GetTypeInfo() const {
 		switch (type){
@@ -46,6 +42,13 @@ public:
 		case RETURN_VALUE:	return retTypeNode->GetTypeInfo();
 		default: throw std::invalid_argument("Invalid type of Symbol");
 		}
+	}
+
+	ParamList const* GetParamList() const {
+		if (type == FUNCTION)
+			return funcNode->GetParamList();
+		else
+			return nullptr;
 	}
 
 	std::string GetQualifiedName() const;
@@ -73,6 +76,15 @@ public:
 	}
 
 private:
+
+	union{
+		ASTNode const* node;
+		FuncDef const* funcNode;
+		StmtVarDecl const* varNode;
+		GlobVarDef const* globVarNode;
+		Type const* retTypeNode;
+		Param const* paramNode;
+	};
 
 	Symbol(SymbolType t, std::string name, ASTNode const* node)
 		: type(t), name(name), node(node)

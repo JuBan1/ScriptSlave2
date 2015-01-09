@@ -1,31 +1,63 @@
 int func(){
-	/*int a;
-	float b;
-	string c;
-	bool d;*/
+	/*int b;
+	int[] c;
+	int[] d;*/
 
-	if(5+5 == 10 ){
+	int a = 7;
+	int[] b;
+	//float b;
+	//string c;
+	//bool d;
+/*
+	if( 5+5 == 10 ){
 		glob = 5;
 	}
 	
-	/*a = a + a - func2(0, "") + func2 * a / a;
-	b = b + b - b * b / b;
-	c = c + a + b + d;
-	d = ~d || d && d;
+	b = 1.2 + 3.4;
+	*/
 	
+	b = func3(b);
+	b = b + b;
+	
+	a = b[0];
+	/*
+	a = a;
+	b[0] = a;
+	e.v = a;
+	
+	func()[0] = a;
+	e.func()[0] = a;
+	e.v.w = a;*/
+	
+	//a = a + a - b[3] - func2(0, ""); //+ func2(123, "") * a / a;
+	//b = b + b - b * b / b;
+	//c = c + a + b + d;
+	//d = ~d || d && d;
+	/*
 	if( func2 == 5 ){
 	
-	}else{}
+	}else{
+		
+	}
 	
-	while(true){
-		int e = "b";
-		e();
+	int[] arr;
+	
+	while(arr[0] > 3){
+		int e = 5;
+		//e = e.v[5];
+		e = arr[5];
 	}*/
 	
-	func2("", 0);
+	//func2("", 0);
 	//func2(0, "");
 }
 
-int func2(int x, string c){
-	return 2;
+//int glob;
+
+int[] func2(int x, string c){
+	return x;
+}
+
+int[] func3(int[] x){
+	return x;
 }

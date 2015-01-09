@@ -14,7 +14,7 @@ ExprPtr ExprParser::default_nud( Token self ){
 
 	throw std::runtime_error( str.c_str() );
 }
-ExprPtr ExprParser::default_led( ExprPtr left ){
+ExprPtr ExprParser::default_led(Token self, ExprPtr left){
 	throw std::runtime_error( "default_led: Impossible exception thrown." );
 }
 
@@ -46,37 +46,55 @@ ExprPtr ExprParser::ident_nud( Token self ){
 	return std::move(ptr);
 }
 
-ExprPtr ExprParser::lthan_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::LThan, std::move( left ), ParseExpression( 5 ));
+ExprPtr ExprParser::lthan_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::LThan, std::move( left ), ParseExpression( 5 ));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::lthaneq_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::LThanEq, std::move( left ), ParseExpression( 5 ));
+ExprPtr ExprParser::lthaneq_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::LThanEq, std::move(left), ParseExpression(5));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::equal_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Equal, std::move( left ), ParseExpression( 5 ));
+ExprPtr ExprParser::equal_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Equal, std::move(left), ParseExpression(5));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::unequal_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Unequal, std::move( left ), ParseExpression( 5 ));
+ExprPtr ExprParser::unequal_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Unequal, std::move(left), ParseExpression(5));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::gthan_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::GThan, std::move( left ), ParseExpression( 5 ));
+ExprPtr ExprParser::gthan_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::GThan, std::move(left), ParseExpression(5));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::gthaneq_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::GThanEq, std::move( left ), ParseExpression( 5 ));
+ExprPtr ExprParser::gthaneq_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::GThanEq, std::move(left), ParseExpression(5));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
 
 // Boolean operators
 ExprPtr ExprParser::not_nud( Token self ){
 	return std::make_unique<UnOp>(UnOp::Not, ParseExpression( 100 ));
 }
-ExprPtr ExprParser::and_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::And, std::move( left ), ParseExpression( 20 ));
+ExprPtr ExprParser::and_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::And, std::move(left), ParseExpression(20));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::or_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Or, std::move( left ), ParseExpression( 10 ));
+ExprPtr ExprParser::or_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Or, std::move(left), ParseExpression(10));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::xor_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Xor, std::move( left ), ParseExpression( 10 ));
+ExprPtr ExprParser::xor_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Xor, std::move(left), ParseExpression(10));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
 
 //Arithmetic operators
@@ -84,23 +102,33 @@ ExprPtr ExprParser::add_nud( Token self ){
 	return ParseExpression( 100 );
 }
 
-ExprPtr ExprParser::add_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Add, std::move( left ), ParseExpression( 10 ));
+ExprPtr ExprParser::add_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Add, std::move(left), ParseExpression(10));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
 ExprPtr ExprParser::sub_nud( Token self ){
 	return std::make_unique<UnOp>(UnOp::Neg, ParseExpression( 100 ));
 }
-ExprPtr ExprParser::sub_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Sub, std::move( left ), ParseExpression( 10 ));
+ExprPtr ExprParser::sub_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Sub, std::move(left), ParseExpression(10));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::mul_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Mul, std::move( left ), ParseExpression( 20 ));
+ExprPtr ExprParser::mul_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Mul, std::move(left), ParseExpression(20));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::div_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Div, std::move( left ), ParseExpression( 20 ));
+ExprPtr ExprParser::div_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Div, std::move(left), ParseExpression(20));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
-ExprPtr ExprParser::mod_led( ExprPtr left ){
-	return std::make_unique<BinOp>(BinOp::Mod, std::move( left ), ParseExpression( 20 ));
+ExprPtr ExprParser::mod_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::Mod, std::move(left), ParseExpression(20));
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
 
 //Parenthesis 
@@ -113,7 +141,7 @@ ExprPtr ExprParser::lparen_nud( Token self ){
 	return n;
 }
 
-ExprPtr ExprParser::lparen_led( ExprPtr left ){
+ExprPtr ExprParser::lparen_led(Token self, ExprPtr left){
 
 	if( left->GetNodeType() != NodeType::Ident )
 		throw std::runtime_error("lparen_led: Expected identifier for function call on left side.");
@@ -138,7 +166,7 @@ ExprPtr ExprParser::lparen_led( ExprPtr left ){
 	return std::move( n );
 }
 
-ExprPtr ExprParser::lbracket_led( ExprPtr left ){
+ExprPtr ExprParser::lbracket_led(Token self, ExprPtr left){
 	std::unique_ptr<BinOp> n = std::make_unique<BinOp>( BinOp::Subscript, std::move( left ), ParseExpression() );
 
 	//if( n->GetLeftChild()->GetNodeType() != NodeType::NameNode )
@@ -147,15 +175,19 @@ ExprPtr ExprParser::lbracket_led( ExprPtr left ){
 	if (!AdvanceToken(TokenType::RBracket))
 		throw std::runtime_error("lbracket_led: Expected right bracket of subscript.");
 
+	n->SetToken(self);
 	return std::move( n );
 }
 
-ExprPtr ExprParser::period_led( ExprPtr left ){
+ExprPtr ExprParser::period_led(Token self, ExprPtr left){
+	auto ptr = std::make_unique<BinOp>(BinOp::MemberAccess, std::move(left), ParseExpression(100 - 1));
+
 	if (m_tokens.GetCurrentToken().type != TokenType::Ident){
 		throw std::runtime_error("period_led: Expected identifier right of period.");
 	}
 
-	return std::make_unique<BinOp>( BinOp::MemberAccess, std::move( left ), ParseExpression( 100 - 1 ) );
+	ptr->SetToken(self);
+	return std::move(ptr);
 }
 
 ExprParser::TokenRule::TokenRule( int lbp, nudPtr nud, ledPtr led )
@@ -189,7 +221,7 @@ ExprPtr ExprParser::led( Token self, ExprPtr left ){
 	auto it = m_rules.find( self.type );
 
 	if( it != m_rules.end() )
-		return (this->*it->second.mLed)(std::move( left ));
+		return (this->*it->second.mLed)(self, std::move( left ));
 	else
 		throw std::runtime_error( "led: Unexpected token." );
 	
@@ -264,4 +296,21 @@ bool ExprParser::MatchExpression( ExprPtr& in ){
 		m_tokens.PopIndex();
 		return false;
 	}
+}
+
+bool ExprParser::MatchNamedExpression(ExprPtr& in){
+	if (!MatchExpression(in))
+		return false;
+
+	if (in->GetNodeType() == NodeType::BinOp){
+		auto p = (BinOp*)in.get();
+		auto t = p->GetType();
+
+		return t == BinOp::MemberAccess || t == BinOp::Subscript;
+	}
+
+	if (in->GetNodeType() == NodeType::Ident)
+		return true;
+
+	return false;
 }

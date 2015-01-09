@@ -2,6 +2,9 @@ file_body:		global_def*
 
 global_decl:	glob_var_def
 global_decl:	func_def
+global_decl:	struct_def
+
+struct_def:		'struct' ident 
 
 glob_var_def:	type ident ;
 func_def:		type ident '(' param_list ')' { stmt_list }

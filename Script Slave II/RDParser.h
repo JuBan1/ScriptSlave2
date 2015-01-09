@@ -16,12 +16,22 @@
 #define MATCH_RETURN return false;
 
 #define CONT_MATCH(x) size_t numAlloc; while(true){numAlloc=node->NumChildren(); g_tokenStack->PushIndex(); if(!(x)){g_tokenStack->PopIndex();break;}g_tokenStack->DiscardIndex();} node->PopChildren(node->NumChildren() - numAlloc);
+#define SINGLE_MATCH(x) g_tokenStack->PushIndex(); if(!(x)){g_tokenStack->PopIndex();} else g_tokenStack->DiscardIndex();
+
 
 #define STAR(x) [&]() -> bool { CONT_MATCH( x ); return true; }()
+
+#define OPTIONAL(x) [&]() -> bool { SINGLE_MATCH( x ); return true; }()
 
 ExprParser* g_exprParser;
 TokenStack* g_tokenStack;
 std::string g_prodName;
+
+bool _match(TokenType ttype){
+	return g_tokenStack->GetNextToken(g_prodName).type == ttype;
+}
+
+#define match(x) _match(TokenType::x)
 
 bool match_type(TypePtr& node){
 	const Token& t = g_tokenStack->GetNextToken(g_prodName);
@@ -29,6 +39,17 @@ bool match_type(TypePtr& node){
 	if (t.type == TokenType::Ident){
 		node = std::make_unique<Type>(t.GetTokenValue());
 		node->SetToken(t);
+
+		g_tokenStack->PushIndex();
+		if (match(LBracket) && match(RBracket)){
+			node->SetIsArray(true);
+			g_tokenStack->DiscardIndex();
+		}
+		else{
+			node->SetIsArray(false);
+			g_tokenStack->PopIndex();
+		}
+
 		return true;
 	}
 	return false;
@@ -49,14 +70,12 @@ bool match_ident( TokenStack& ts ){
 	return g_tokenStack->GetNextToken(g_prodName).type == TokenType::Ident;
 }
 
-bool _match( TokenType ttype ){
-	return g_tokenStack->GetNextToken( g_prodName ).type == ttype;
+bool match_expression(ExprPtr& in){
+	return g_exprParser->MatchExpression(in);
 }
 
-#define match(x) _match(TokenType::x)
-
-bool match_expression( ExprPtr& in ){
-	return g_exprParser->MatchExpression( in );
+bool match_named_expr(ExprPtr& in){
+	return g_exprParser->MatchNamedExpression(in);
 }
 
 bool match_stmtblock( StmtBlockPtr& in );
@@ -104,16 +123,6 @@ bool match_stmt( StmtPtr& in ){
 		);
 	}
 
-	{//stmt -> ident = expr ;
-		PREPARE_NODE( StmtAssign );
-		TRY_MATCH(
-			match_ident( node->GetNameRef() ) &&
-			match( Assign ) &&
-			match_expression( node->GetExprRef() ) &&
-			match( Semicolon )
-		);
-	}
-
 	{//stmt -> ident ( argList )
 		PREPARE_NODE( StmtFuncCall );
 		TRY_MATCH(
@@ -147,28 +156,31 @@ bool match_stmt( StmtPtr& in ){
 		);
 	}
 
-	{//stmt -> var type ident = expr
-		PREPARE_NODE(StmtVarDecl);
-		TRY_MATCH(
-			match_type(node->GetTypeRef()) &&
-			match_ident(node->GetNameRef()) &&
-			match(Assign) &&
-			match_expression(node->GetExprRef()) &&
-			match(Semicolon)
-		);
-	}
-
-	{//stmt -> type ident ;
+	{//stmt -> type ident ( = expr )? ;
 		PREPARE_NODE( StmtVarDecl );
 		TRY_MATCH(
 			match_type( node->GetTypeRef() ) &&
 			match_ident( node->GetNameRef() ) &&
+			OPTIONAL(
+				match(Assign) &&
+				match_expression(node->GetExprRef())
+			) &&
 			match( Semicolon )
 		);
 	}
 
+	{//stmt -> ident = expr ;
+		PREPARE_NODE(StmtAssign);
+		TRY_MATCH(
+			match_ident(node->GetNameRef()) &&
+			match(Assign) &&
+			match_expression(node->GetExprRef()) &&
+			match(Semicolon)
+			);
+	}
+
 	if( g_tokenStack->GetCurrentToken().type == TokenType::If ){ //if-then currently parses the entire block twice. Ugly, but not an error.
-		{//stmt -> if ( expr ) stmt else stmt
+		{//stmt -> if '(' expr ')' stmt else stmt
 			PREPARE_NODE( StmtIfThenElse );
 			TRY_MATCH( match( If ) &&
 				match( LParen ) &&
@@ -181,7 +193,7 @@ bool match_stmt( StmtPtr& in ){
 			);
 		}
 
-		{//stmt -> if ( expr ) stmt
+		{//stmt -> if '(' expr ')' stmt
 			PREPARE_NODE( StmtIfThen );
 			TRY_MATCH( match( If ) &&
 				match( LParen ) &&
@@ -244,8 +256,8 @@ bool match_param_list( ParamListPtr& in ){
 	in = std::make_unique<ParamList>();
 	return true;
 }
-
-bool match_func_def( FuncDefPtr& in ){
+/*
+bool match_func_def(FuncDefPtr& in){
 	PREPARE_NODE(FuncDef);
 
 	//func_def -> ident ident ( param_list ) { stmt_block }
@@ -256,10 +268,10 @@ bool match_func_def( FuncDefPtr& in ){
 		match_param_list(node->GetParamListRef()) &&
 		match(RParen) &&
 		match_stmtblock(node->GetStmtBlockRef())
-	);
+		);
 
 	MATCH_RETURN;
-}
+}*/
 
 bool match_global_stmt(GlobalStmtPtr& in){
 

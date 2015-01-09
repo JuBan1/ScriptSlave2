@@ -8,5 +8,3 @@
 		=> while(true/false)
 		=> boolean equal/unequal
 [x] Liveness analysis
-
-Sollen alle vars auf 0 initialisiert werden?

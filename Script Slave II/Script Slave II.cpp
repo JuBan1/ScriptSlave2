@@ -15,6 +15,7 @@
 
 #include "TypeTable.h"
 #include "FirstPass.h"
+#include "CollectTypeInfo.h"
 #include "SecondPass.h"
 
 //Removes useless nodes from the AST which are a left-over from parsing phase.
@@ -162,11 +163,16 @@ void GetFormattedTokenStringForError(Token t, std::vector<Token>& tokens){
 TypeTable CreateNativeTypes(){
 	TypeTable tt;
 
-	tt.Add(TypeInfo{ "void", 0 });
-	tt.Add(TypeInfo{ "int", 4 });
-	tt.Add(TypeInfo{ "float", 4 });
-	tt.Add(TypeInfo{ "bool", 1 });
-	tt.Add(TypeInfo{ "string", 4 });
+	tt.Add(TypeInfo{ "void", 0, false });
+	tt.Add(TypeInfo{ "int", 4, false });
+	tt.Add(TypeInfo{ "float", 4, false });
+	tt.Add(TypeInfo{ "bool", 1, false });
+	tt.Add(TypeInfo{ "string", 4, false });
+
+	tt.Add(TypeInfo{ "int", 4, true });
+	tt.Add(TypeInfo{ "float", 4, true });
+	tt.Add(TypeInfo{ "bool", 1, true });
+	tt.Add(TypeInfo{ "string", 4, true });
 
 	return tt;
 }
@@ -270,11 +276,16 @@ void compile(std::string fileName, bool printLiveness = false){
 	if (firstPass.GetErrors().size() > 0)
 		return;
 
-	std::cout << std::endl;
+	CollectTypeInfo cti(typeTable);
+	cti.Process(start);
 
-	globalScope.PrintAll();
+	for (auto&& error : cti.GetErrors()){
+		std::cout << error.second.filePosition.ToString() << " " << error.first << "\n";
+		GetFormattedTokenStringForError(error.second, tokens);
+	}
 
-	std::cout << std::endl;
+	if (cti.GetErrors().size() > 0)
+		return;
 
 	//Second pass:
 	// Check if all ident-nodes are known variables
@@ -287,6 +298,12 @@ void compile(std::string fileName, bool printLiveness = false){
 		GetFormattedTokenStringForError(error.second, tokens);
 	}
 
+
+	std::cout << std::endl;
+
+	globalScope.PrintAll();
+
+	std::cout << std::endl;
 
 
 	std::cout << "\n\n";

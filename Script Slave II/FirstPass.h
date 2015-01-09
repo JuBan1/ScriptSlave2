@@ -21,7 +21,7 @@ public:
 	}
 
 	virtual bool inNode(GlobVarDef* n, bool last) override {
-		auto type = m_typeTable.Get(n->GetType()->GetName());
+		/*auto type = m_typeTable.Get(n->GetType()->GetName());
 
 		if (!type){
 			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
@@ -32,18 +32,18 @@ public:
 			return false;
 		}
 
-		n->GetType()->SetTypeInfo(type);
+		n->GetType()->SetTypeInfo(type);*/
 
 		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateGlobalVariableSymbol(n));
 
 		if (!success)
-			AddError(n->GetToken(), "Symbol '%s' is already in use.", n->GetType()->GetName().c_str());
+			AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());
 
 		return true; //return true so we also walk through the children of n
 	}
 
 	virtual bool inNode(StmtVarDecl* n, bool last) override {
-		auto type = m_typeTable.Get(n->GetType()->GetName());
+		/*auto type = m_typeTable.Get(n->GetType()->GetName());
 
 		if (!type){
 			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
@@ -54,23 +54,26 @@ public:
 			return false;
 		}
 
-		n->GetType()->SetTypeInfo(type);
+		n->GetType()->SetTypeInfo(type);*/
 		
 		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateVariableSymbol(n));
 
 		if (!success)
-			AddError(n->GetToken(), "Symbol '%s' is already in use.", n->GetType()->GetName().c_str());
+			AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());
 
 		return true; //return true so we also walk through the children of n
 	}
 
-	virtual bool inNode(StmtBlock* n, bool last) override { //Always return true from here so we can keep checking for other errors within the function
+	virtual bool inNode(StmtBlock* n, bool last) override {
 		std::string scopeName = "block" + std::to_string(n->GetToken().filePosition.line) + ":" + std::to_string(n->GetToken().filePosition.pos);
 
-		m_currentScope->AddSubScope(scopeName);
+		bool success = m_currentScope->AddSubScope(scopeName);
+
+		_ASSERT(success);
+
 		m_currentScope = m_currentScope->GetSubScope(scopeName);
 
-		return true;
+		return true; //Always return true from here so we can keep checking for other errors within the function
 	}
 
 	virtual void outNode(StmtBlock* n, bool last){
@@ -78,16 +81,6 @@ public:
 	}
 
 	virtual bool inNode(FuncDef* n, bool last) override { //Always return true from here so we can keep checking for other errors within the function
-		std::string retTypeName = n->GetRetType()->GetName();
-		auto retType = m_typeTable.Get(n->GetRetType()->GetName());
-
-		if (!retType){
-			AddError(n->GetToken(), "Unknown return type '%s'.", n->GetRetType()->GetName().c_str());
-			return true;
-		}
-
-		n->GetRetType()->SetTypeInfo(retType);
-		
 		bool success = m_globalScope.AddSymbol(n->GetName()->GetName(), Symbol::CreateFunctionSymbol(n));
 
 		if (!success){
@@ -96,7 +89,8 @@ public:
 		}
 			
 
-		m_currentScope->AddSubScope(n->GetName()->GetName());
+		success = m_currentScope->AddSubScope(n->GetName()->GetName());
+		_ASSERT(success);
 		m_currentScope = m_currentScope->GetSubScope(n->GetName()->GetName());
 		
 		std::string retValName = ":retVal:";
@@ -104,22 +98,14 @@ public:
 
 		if (!success){
 			AddError(n->GetToken(), "Could not generate symbol for return value in '%s'.", n->GetName()->GetName().c_str());
-			return false; //Do not continue if function name is redeclared.
+			return false; //Should never happen
 		}
 
 		for (const auto& param : n->GetParamList()->GetChildren()){
-			auto paramType = m_typeTable.Get(param->GetType()->GetName());
-
-			if (!paramType){
-				AddError(n->GetToken(), "Unknown parameter type '%s'.", n->GetRetType()->GetName());
-				return true;
-			}
-
-			param->GetType()->SetTypeInfo(paramType);
 			bool success = m_currentScope->AddSymbol(param->GetName()->GetName(), Symbol::CreateParamSymbol(param.get()));
 
 			if (!success)
-				AddError(n->GetToken(), "Symbol '%s' already in use.", n->GetName()->GetName());
+				AddError(n->GetName()->GetToken(), "Symbol '%s' already in use.", n->GetName()->GetName());
 		}
 
 		return true;
@@ -127,26 +113,6 @@ public:
 
 	virtual void outNode(FuncDef* n, bool last){
 		m_currentScope = m_currentScope->GetParentScope();
-	}
-
-	virtual bool inNode(IntLit* n, bool last) override {
-		n->SetTypeInfo(m_typeTable.Get("int"));
-		return false;
-	}
-
-	virtual bool inNode(FloatLit* n, bool last) override {
-		n->SetTypeInfo(m_typeTable.Get("float"));
-		return false; 
-	}
-
-	virtual bool inNode(StringLit* n, bool last) override {
-		n->SetTypeInfo(m_typeTable.Get("string"));
-		return false;
-	}
-
-	virtual bool inNode(BoolLit* n, bool last) override {
-		n->SetTypeInfo(m_typeTable.Get("bool"));
-		return false;
 	}
 
 	virtual bool inNode(StmtBreak* n, bool last){ if (m_breakDepth == 0) AddError(n->GetToken(), "Break outside of loop."); return false; }

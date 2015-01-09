@@ -104,7 +104,7 @@ static const char* NodeTypeAsString( NodeType op ){
 	: Parent( NodeType::Name ), m_ ## AName( std::move( AName ) ), m_ ## BName( std::move( BName ) ), m_ ## CName( std::move( CName ) ), m_ ## DName(DName) {}
 #define DEFAULT_TYPEDEF(Name) typedef std::unique_ptr<Name> Name ## Ptr;
 #define GET_CHILD(Type, Name) private: Type ## Ptr m_ ## Name; public: Type* Get ## Name () const { return m_ ## Name.get(); } Type ## Ptr& Get ## Name ## Ref(){ return m_ ## Name; }
-#define GET_MEMBER(Type, Name) private: Type m_ ## Name; public: Type Get ## Name (){ return m_ ## Name; }
+#define GET_MEMBER(Type, Name) private: Type m_ ## Name; public: Type Get ## Name () const { return m_ ## Name; }
 #define GETSET_MEMBER(Type, Name) private: Type m_ ## Name; public: Type Get ## Name () const { return m_ ## Name; } void Set ## Name( Type t){ m_ ## Name = t; }
 
 #define GET_CHILD_ARRAY(Type,Name) private:\
@@ -114,6 +114,7 @@ public:\
 	void Pop(){ m_ ## Name.pop_back(); }\
 	void Add( Type ## Ptr n ){ m_ ## Name.push_back( std::move( n ) ); }\
 	std::vector<Type ## Ptr>& GetChildren(){ return m_ ## Name; }\
+	const std::vector<Type ## Ptr>& GetChildren() const { return m_ ## Name; }\
 	bool IsEmpty(){ return m_ ## Name.empty(); }\
 	size_t NumChildren(){ return m_ ## Name.size(); }\
 	void PopChildren( size_t n ){ while( n > 0 ){ --n; m_ ## Name.pop_back(); } }
@@ -155,7 +156,8 @@ public:
 	DEFAULT_ACCEPT;
 	GET_MEMBER(std::string, Name);
 	GETSET_MEMBER(TypeInfo const*, TypeInfo);
-
+	GETSET_MEMBER(bool, IsArray);
+		
 	virtual std::string GetNodeAsString() { return m_Name; };
 
 	Type(std::string Name) : ASTNode(NodeType::Type), m_Name(Name), m_TypeInfo(nullptr) {}

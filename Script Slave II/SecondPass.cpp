@@ -66,7 +66,7 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 		case BinOp::Unequal:
 			{
 				if( lt != rt ){
-					AddError(n->GetLeft()->GetToken(), "Type mismatch: Expected same types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					AddError(n->GetToken(), "Type mismatch: Expected same types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
 					return nullptr;
 				}
 				p->SetTypeInfo(m_typeTable.Get("bool"));
@@ -78,7 +78,7 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 		case BinOp::GThanEq:
 			{
 				if( rt != lt || rt->name != "int" || rt->name != "float" ){
-					AddError(n->GetLeft()->GetToken(), "Type mismatch: Expected matching numeric types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					AddError(n->GetToken(), "Type mismatch: Expected matching numeric types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
 					return nullptr;
 				}
 				p->SetTypeInfo(m_typeTable.Get("bool"));
@@ -89,7 +89,7 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 		case BinOp::Xor:
 			{
 				if( lt->name != "bool" || rt->name != "bool" ){
-					AddError(n->GetLeft()->GetToken(), "Type mismatch: Expected 'bool' types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					AddError(n->GetToken(), "Type mismatch: Expected 'bool' types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
 					return nullptr;
 				}
 				p->SetTypeInfo(m_typeTable.Get("bool"));
@@ -100,7 +100,7 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 		case BinOp::Div:
 			{
 				if( lt != rt || lt->name != "int" && lt->name != "float" ){
-					AddError(n->GetLeft()->GetToken(), "Type mismatch: Expected matching numeric types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					AddError(n->GetToken(), "Type mismatch: Expected matching numeric types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
 					return nullptr;
 				}
 				p->SetTypeInfo(lt);
@@ -109,7 +109,7 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 		case BinOp::Mod:
 			{
 				if (lt != rt || lt->name != "int"){
-					AddError(n->GetLeft()->GetToken(), "Type mismatch: Expected 'int' types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					AddError(n->GetToken(), "Type mismatch: Expected 'int' types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
 					return nullptr;
 				}
 				p->SetTypeInfo(lt);
@@ -122,12 +122,34 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 					return p->GetTypeInfo();
 				}
 				if (lt != rt || lt->name != "int" && lt->name != "float"){
-					AddError(n->GetLeft()->GetToken(), "Type mismatch: Expected matching numeric types but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					AddError(n->GetToken(), "Type mismatch: Expected matching numeric types or strings but found '%s' and '%s' in operation '%s'.", lt->name.c_str(), rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
 					return nullptr;
 				}
 				p->SetTypeInfo(lt);
 				return p->GetTypeInfo();
 			}
+		case BinOp::Subscript:
+		{
+				if (!lt->isArray){
+					AddError(n->GetRight()->GetToken(), "Type mismatch: Expected array type but found '%s' in operation '%s'.", rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					return nullptr;
+				}
+
+				if (rt->name != "int"){
+					AddError(n->GetRight()->GetToken(), "Type mismatch: Expected numeric type but found '%s' in operation '%s'.", rt->name.c_str(), BinOp::GetTypeAsString(n->GetType()));
+					return nullptr;
+				}
+
+				auto simpleType = m_typeTable.Get(lt->GetSimpleTypeName());
+				_ASSERT(simpleType != nullptr);
+
+				p->SetTypeInfo(simpleType);
+				return p->GetTypeInfo();
+		}
+
+		default:
+			__debugbreak();
+			return nullptr;
 		}
 	}
 
@@ -144,11 +166,11 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 			return nullptr;
 		}
 		
-		p->SetTypeInfo(calleeSym->funcNode->GetRetType()->GetTypeInfo());
+		p->SetTypeInfo(calleeSym->GetTypeInfo());
 
 		//check arguments
 		const auto& args = n->GetArgs()->GetChildren();
-		const auto& params = calleeSym->funcNode->GetParamList()->GetChildren();
+		const auto& params = calleeSym->GetParamList()->GetChildren();
 
 		if (args.size() != params.size()){
 			AddError(n->GetCallee()->GetToken(), "Function requires %d arguments, but %d supplied.", params.size(), args.size());
@@ -262,7 +284,7 @@ void SecondPass::outNode(StmtFuncCall* n, bool last){
 
 	//check arguments
 	const auto& args = n->GetArgList()->GetChildren();
-	const auto& params = calleeSym->funcNode->GetParamList()->GetChildren();
+	const auto& params = calleeSym->GetParamList()->GetChildren();
 
 	if (args.size() != params.size()){
 		AddError(n->GetToken(), "Function requires %d arguments, but %d supplied.", params.size(), args.size());

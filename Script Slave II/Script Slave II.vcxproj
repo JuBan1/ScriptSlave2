@@ -86,6 +86,7 @@
   <ItemGroup>
     <ClCompile Include="BaseVisitor.cpp" />
     <ClCompile Include="CodeGen.cpp" />
+    <ClCompile Include="CollectTypeInfo.cpp" />
     <ClCompile Include="ExprParser.cpp" />
     <ClCompile Include="FirstPass.cpp" />
     <ClCompile Include="Lexer.cpp" />
@@ -100,6 +101,7 @@
     <ClInclude Include="ASTNode.h" />
     <ClInclude Include="BaseVisitor.h" />
     <ClInclude Include="CodeGen.h" />
+    <ClInclude Include="CollectTypeInfo.h" />
     <ClInclude Include="ExprParser.h" />
     <ClInclude Include="FilePosition.h" />
     <ClInclude Include="FirstPass.h" />

@@ -23,10 +23,10 @@ public:
 		m_currentScope = m_currentScope->GetParentScope();
 	}
 
-	virtual bool inNode(FuncDef* n, bool last) override { //Always return true from here so we can keep checking for other errors within the function
-		m_currentScope = m_currentScope->GetSubScope(n->GetName()->GetName());
-		return true;
-	}
+	//virtual bool inNode(FuncDef* n, bool last) override { //Always return true from here so we can keep checking for other errors within the function
+	//	m_currentScope = m_currentScope->GetSubScope(n->GetName()->GetName());
+	//	return true;
+	//}
 
 	virtual void outNode(FuncDef* n, bool last){
 		m_currentScope = m_currentScope->GetParentScope();
@@ -60,6 +60,102 @@ public:
 		return true;
 	}
 
+	virtual bool inNode(GlobVarDef* n, bool last) override {
+		//auto type = m_typeTable.Get(n->GetType()->GetName());
+		auto type = n->GetType()->GetTypeInfo();
+
+		if (!type){
+			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
+			return false;
+		}
+		else if (type->size == 0){
+			AddError(n->GetToken(), "Type '%s' can not be used.", n->GetType()->GetName().c_str());
+			return false;
+		}
+
+		//n->GetType()->SetTypeInfo(type);
+
+		/*bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateGlobalVariableSymbol(n));
+
+		if (!success)
+			AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());*/
+
+		return true; //return true so we also walk through the children of n
+	}
+
+	virtual bool inNode(StmtVarDecl* n, bool last) override {
+		//auto type = m_typeTable.Get(n->GetType()->GetName());
+		auto type = n->GetType()->GetTypeInfo();
+
+		if (!type){
+			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
+			return false;
+		}
+		else if (type->size == 0){
+			AddError(n->GetToken(), "Type '%s' can not be used.", n->GetType()->GetName().c_str());
+			return false;
+		}
+
+		//n->GetType()->SetTypeInfo(type);
+
+		/*bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateVariableSymbol(n));
+
+		if (!success)
+			AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());*/
+
+		return true; //return true so we also walk through the children of n
+	}
+
+	virtual bool inNode(FuncDef* n, bool last) override { //Always return true from here so we can keep checking for other errors within the function
+		std::string retTypeName = n->GetRetType()->GetName();
+		//auto retType = m_typeTable.Get(n->GetRetType()->GetName());
+		auto retType = n->GetRetType()->GetTypeInfo();
+
+		if (!retType){
+			AddError(n->GetToken(), "Unknown return type '%s'.", n->GetRetType()->GetName().c_str());
+			return true;
+		}
+
+		//n->GetRetType()->SetTypeInfo(retType);
+
+		//bool success = m_globalScope.AddSymbol(n->GetName()->GetName(), Symbol::CreateFunctionSymbol(n));
+
+		//if (!success){
+		//	AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());
+		//	return false; //Do not continue if function name is redeclared.
+		//}
+
+
+		m_currentScope->AddSubScope(n->GetName()->GetName());
+		m_currentScope = m_currentScope->GetSubScope(n->GetName()->GetName());
+
+		//std::string retValName = ":retVal:";
+		//success = m_currentScope->AddSymbol(retValName, Symbol::CreateReturnValueSymbol(retValName, n->GetRetType()));
+
+		//if (!success){
+		//	AddError(n->GetToken(), "Could not generate symbol for return value in '%s'.", n->GetName()->GetName().c_str());
+		//	return false; //Do not continue if function name is redeclared.
+		//}
+
+		for (const auto& param : n->GetParamList()->GetChildren()){
+			//auto paramType = m_typeTable.Get(param->GetType()->GetName());
+			auto paramType = param->GetType()->GetTypeInfo();
+
+			if (!paramType){
+				AddError(n->GetToken(), "Unknown parameter type '%s'.", n->GetRetType()->GetName());
+				return true;
+			}
+
+			param->GetType()->SetTypeInfo(paramType);
+			/*bool success = m_currentScope->AddSymbol(param->GetName()->GetName(), Symbol::CreateParamSymbol(param.get()));
+
+			if (!success)
+				AddError(n->GetName()->GetToken(), "Symbol '%s' already in use.", n->GetName()->GetName());*/
+		}
+
+		return true;
+	}
+
 	virtual void outNode(StmtAssign* n, bool last);
 	virtual void outNode(StmtVarDecl* n, bool last);
 	virtual void outNode(StmtWhile* n, bool last);
@@ -81,7 +177,7 @@ public:
 		TypeInfo const* exprType = n->GetExpr()->GetTypeInfo();
 
 		if (retType != exprType){
-			AddError(n->GetToken(), "Expected return type of type '%s' but found '%s'", retType->name.c_str(), exprType->name.c_str());
+			AddError(n->GetExpr()->GetToken(), "Expected return type of type '%s' but found '%s'", retType->name.c_str(), exprType->name.c_str());
 			return;
 		}
 
@@ -107,7 +203,7 @@ private:
 		if (sym == nullptr){ //unknown symbol.
 			AddError(n->GetToken(), "Unknown symbol '%s'.", n->GetName().c_str());
 		}
-		else if (sym->type == Symbol::VARIABLE && sym->varNode->GetToken().filePosition > n->GetToken().filePosition) { //If sym->type == PARAMETER, the symbol can't be used before it's decl.
+		else if (sym->type == Symbol::VARIABLE && sym->GetNode()->GetToken().filePosition > n->GetToken().filePosition) { //If sym->type == PARAMETER, the symbol can't be used before it's decl.
 			AddError(n->GetToken(), "Symbol '%s' used before its declaration in line %d.", n->GetName().c_str(), n->GetToken().filePosition.line);
 		}
 		else{
@@ -128,7 +224,7 @@ private:
 
 	std::vector<std::pair<std::string, Token>> m_errors;
 	const TypeTable& m_typeTable;			//Since we're using pointers to TypeInfo, SymbolScope and Symbol objects, these collections must not be modified
-	const SymbolScope& m_globalScope;		//after this stage! Resizing/reordering of the underlying containers might otherwise invalidate the pointers.
-	const SymbolScope* m_currentScope;
+	SymbolScope& m_globalScope;				//after this stage! Resizing/reordering of the underlying containers might otherwise invalidate the pointers.
+	SymbolScope* m_currentScope;
 };
 
