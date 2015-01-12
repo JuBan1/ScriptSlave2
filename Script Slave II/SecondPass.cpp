@@ -199,12 +199,9 @@ TypeInfo const* SecondPass::GetResultTypeOf(Expr* p, Symbol const* doNotUse = nu
 
 void SecondPass::outNode(StmtAssign* n, bool last){
 	
-	auto varType = n->GetName()->GetTypeInfo();
+	auto varType = GetResultTypeOf(n->GetLHS());  //n->GetLHS()->GetTypeInfo();
 	auto exprType = GetResultTypeOf( n->GetExpr() );
-	
-	//const auto& varName = n->GetVar()->GetName();
-	
-	//printResultType( exprType, n );
+
 
 	if( exprType == nullptr || varType == nullptr )
 		return; //GetResultTypeOf( ... ) has already added an error for this. Return without doing anything.
@@ -223,8 +220,6 @@ void SecondPass::outNode(StmtVarDecl* n, bool last){
 	auto varType = n->GetName()->GetTypeInfo();
 	auto exprType = GetResultTypeOf(n->GetExpr(), n->GetName()->GetSymbol());
 
-	//printResultType( exprType, n );
-
 	if (exprType == nullptr || varType == nullptr)
 		return; //GetResultTypeOf( ... ) has already added an error for this. Return without doing anything.
 
@@ -237,8 +232,6 @@ void SecondPass::outNode(StmtVarDecl* n, bool last){
 void SecondPass::outNode(StmtWhile* n, bool last){
 	auto exprType = GetResultTypeOf( n->GetExpr() );
 
-	//printResultType( exprType, n->GetExpr() );
-
 	if( exprType == nullptr )
 		return;
 
@@ -250,8 +243,6 @@ void SecondPass::outNode(StmtWhile* n, bool last){
 void SecondPass::outNode(StmtIfThen* n, bool last){
 	auto exprType = GetResultTypeOf( n->GetExpr() );
 
-	//printResultType( exprType, n->GetExpr() );
-
 	if (exprType == nullptr)
 		return;
 
@@ -262,8 +253,6 @@ void SecondPass::outNode(StmtIfThen* n, bool last){
 
 void SecondPass::outNode(StmtIfThenElse* n, bool last){
 	auto exprType = GetResultTypeOf(n->GetExpr());
-
-	//printResultType( exprType, n->GetExpr() );
 
 	if (exprType == nullptr)
 		return;

@@ -172,7 +172,7 @@ bool match_stmt( StmtPtr& in ){
 	{//stmt -> ident = expr ;
 		PREPARE_NODE(StmtAssign);
 		TRY_MATCH(
-			match_ident(node->GetNameRef()) &&
+			match_named_expr(node->GetLHSRef()) &&
 			match(Assign) &&
 			match_expression(node->GetExprRef()) &&
 			match(Semicolon)
@@ -256,6 +256,7 @@ bool match_param_list( ParamListPtr& in ){
 	in = std::make_unique<ParamList>();
 	return true;
 }
+
 /*
 bool match_func_def(FuncDefPtr& in){
 	PREPARE_NODE(FuncDef);
@@ -273,7 +274,49 @@ bool match_func_def(FuncDefPtr& in){
 	MATCH_RETURN;
 }*/
 
+bool match_class_member(ClassMemberPtr& in){
+
+	{//class_member -> type ident ( = expr )? ;
+		PREPARE_NODE(ClassVar);
+		TRY_MATCH(
+			match_type(node->GetTypeRef()) &&
+			match_ident(node->GetNameRef()) &&
+			OPTIONAL(
+			match(Assign) &&
+				match_expression(node->GetExprRef())
+			) &&
+			match(Semicolon)
+		);
+	}
+
+	MATCH_RETURN;
+}
+
+bool match_class_body(ClassBodyPtr& in){
+	PREPARE_NODE(ClassBody);
+
+	//class_body -> class_member*
+	TRY_MATCH(
+		STAR(
+			match_class_member(node->Push())
+		)
+	);
+	MATCH_RETURN;
+}
+
 bool match_global_stmt(GlobalStmtPtr& in){
+
+	{
+		PREPARE_NODE(ClassDef);
+		TRY_MATCH(
+			match(Class) &&
+			NO_TRACEBACK &&
+			match_ident(node->GetNameRef()) &&
+			match(LBrace) &&
+			match_class_body(node->GetBodyRef()) &&
+			match(RBrace)
+		);
+	}
 
 	{
 		PREPARE_NODE(FuncDef);
@@ -284,7 +327,7 @@ bool match_global_stmt(GlobalStmtPtr& in){
 			match_param_list(node->GetParamListRef()) &&
 			match(RParen) &&
 			match_stmtblock(node->GetStmtBlockRef())
-			);
+		);
 	}
 
 	{

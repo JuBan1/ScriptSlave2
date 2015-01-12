@@ -35,6 +35,12 @@ enum class NodeType{
 	GlobalStmt,
 	FuncCallExpr,
 
+	ClassDef,
+	ClassBody,
+	ClassMember,
+	ClassVar,
+	ClassFunc,
+
 	StmtBreak,
 	StmtWhile,
 	StmtIfThen,
@@ -72,6 +78,11 @@ static const char* NodeTypeAsString( NodeType op ){
 		CASE_RETURN(GlobVarDef);
 		CASE_RETURN(GlobalStmt);
 		CASE_RETURN(FuncCallExpr);
+		CASE_RETURN(ClassDef);
+		CASE_RETURN(ClassBody);
+		CASE_RETURN(ClassMember);
+		CASE_RETURN(ClassVar);
+		CASE_RETURN(ClassFunc);
 		CASE_RETURN(StmtBreak);
 		CASE_RETURN(StmtWhile);
 		CASE_RETURN(StmtIfThen);
@@ -365,7 +376,7 @@ class StmtAssign : public Stmt{
 public:
 	DEFAULT_ACCEPT;
 
-	GET_CHILD(Ident, Name);
+	GET_CHILD(Expr, LHS);
 	GET_CHILD(Expr, Expr);
 	
 
@@ -502,6 +513,47 @@ public:
 	DEFAULT_CONSTRUCT(FuncDef, GlobalStmt);
 };
 DEFAULT_TYPEDEF( FuncDef );
+
+class ClassMember : public ASTNode {
+public:
+	DEFAULT_ACCEPT;
+
+	ClassMember(NodeType nt) : ASTNode(nt){}
+};
+DEFAULT_TYPEDEF(ClassMember);
+
+class ClassVar : public ClassMember{
+public:
+	DEFAULT_ACCEPT;
+	GET_CHILD(Type, Type);
+	GET_CHILD(Ident, Name);
+	GET_CHILD(Expr, Expr);
+	DEFAULT_CONSTRUCT(ClassVar, ClassMember);
+};
+DEFAULT_TYPEDEF(ClassVar);
+
+
+class ClassBody : public ASTNode {
+public:
+	DEFAULT_ACCEPT;
+
+	GET_CHILD_ARRAY(ClassMember, Members);
+
+	DEFAULT_CONSTRUCT(ClassBody, ASTNode);
+};
+DEFAULT_TYPEDEF(ClassBody);
+
+class ClassDef : public GlobalStmt {
+public:
+	DEFAULT_ACCEPT;
+
+	GET_CHILD(Ident, Name);
+	GET_CHILD(ClassBody, Body);
+
+	DEFAULT_CONSTRUCT(ClassDef, GlobalStmt);
+};
+DEFAULT_TYPEDEF(ClassDef);
+
 
 class StartBlock : public ASTNode{
 public:

@@ -20,20 +20,39 @@ public:
 		return m_errors;
 	}
 
+	virtual bool inNode(ClassDef* n, bool last) override {
+		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateClassSymbol(n));
+
+		if (!success)
+			AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());
+
+		std::string scopeName = "class" + std::to_string(n->GetToken().filePosition.line) + ":" + std::to_string(n->GetToken().filePosition.pos);
+
+		success = m_currentScope->AddSubScope(scopeName);
+
+		_ASSERT(success);
+
+		m_currentScope = m_currentScope->GetSubScope(scopeName);
+
+
+		return true; //return true so we also walk through the children of n
+	}
+
+	virtual void outNode(ClassDef* n, bool last) override {
+		m_currentScope = m_currentScope->GetParentScope();
+	}
+
+
+	virtual bool inNode(ClassVar* n, bool last) override {
+		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateClassVariableSymbol(n));
+
+		if (!success)
+			AddError(n->GetName()->GetToken(), "Symbol '%s' is already in use.", n->GetName()->GetName().c_str());
+
+		return true;
+	}
+
 	virtual bool inNode(GlobVarDef* n, bool last) override {
-		/*auto type = m_typeTable.Get(n->GetType()->GetName());
-
-		if (!type){
-			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
-			return false;
-		}
-		else if (type->size == 0){
-			AddError(n->GetToken(), "Type '%s' can not be used.", n->GetType()->GetName().c_str());
-			return false;
-		}
-
-		n->GetType()->SetTypeInfo(type);*/
-
 		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateGlobalVariableSymbol(n));
 
 		if (!success)
@@ -43,19 +62,6 @@ public:
 	}
 
 	virtual bool inNode(StmtVarDecl* n, bool last) override {
-		/*auto type = m_typeTable.Get(n->GetType()->GetName());
-
-		if (!type){
-			AddError(n->GetToken(), "Unknown type '%s'.", n->GetType()->GetName().c_str());
-			return false;
-		}
-		else if (type->size == 0){
-			AddError(n->GetToken(), "Type '%s' can not be used.", n->GetType()->GetName().c_str());
-			return false;
-		}
-
-		n->GetType()->SetTypeInfo(type);*/
-		
 		bool success = m_currentScope->AddSymbol(n->GetName()->GetName(), Symbol::CreateVariableSymbol(n));
 
 		if (!success)

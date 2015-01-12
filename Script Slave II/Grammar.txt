@@ -4,7 +4,10 @@ global_decl:	glob_var_def
 global_decl:	func_def
 global_decl:	struct_def
 
-struct_def:		'struct' ident 
+class_def:		'class' ident '{' class_body '}'
+class_body:		class_var*
+
+class_var:		type ident (= expr)? ;
 
 glob_var_def:	type ident ;
 func_def:		type ident '(' param_list ')' { stmt_list }
@@ -27,12 +30,11 @@ stmt:			ident '(' arg_list ')' ;
 stmt:			break ;
 stmt:			return ;
 stmt:			return expr ;
-stmt:			type ident = expr;
-stmt:			type ident ;
+stmt:			type ident (= expr)? ;
 
 stmt:			{ stmt_block }
 
 stmt_block:		stmt*
 
-
+named_expr:		..
 expr:			..

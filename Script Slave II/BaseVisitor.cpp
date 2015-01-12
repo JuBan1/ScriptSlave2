@@ -26,6 +26,14 @@ ACCEPT( Name2, true);\
 OUTNODE;\
 }
 
+#define DEFINE_VISIT_3(Type, Name1, Name2, Name3) void BaseVisitor::visit( Type* n, bool last ){\
+	INNODE; \
+	ACCEPT(Name1, false); \
+	ACCEPT(Name2, false); \
+	ACCEPT(Name3, true); \
+	OUTNODE; \
+}
+
 DEFINE_DEFAULT_VISIT( ASTNode )
 
 //Expr
@@ -46,7 +54,7 @@ DEFINE_DEFAULT_VISIT(StringLit)
 DEFINE_DEFAULT_VISIT(Stmt)
 DEFINE_DEFAULT_VISIT(StmtBreak)
 
-DEFINE_VISIT_2( StmtAssign, GetName(), GetExpr() )
+DEFINE_VISIT_2( StmtAssign, GetLHS(), GetExpr() )
 DEFINE_VISIT_2( StmtWhile, GetExpr(), GetBody() )
 DEFINE_VISIT_2( StmtIfThen, GetExpr(), GetThen() )
 DEFINE_VISIT_1( StmtReturn, GetExpr() )
@@ -71,9 +79,16 @@ void BaseVisitor::visit(StmtVarDecl* n, bool last){
 	OUTNODE;
 }
 
+// Class
+DEFINE_DEFAULT_VISIT(ClassMember);
+DEFINE_VISIT_3(ClassVar, GetType(), GetName(), GetExpr());
+
+
 // GlobalStmt
 DEFINE_DEFAULT_VISIT(GlobalStmt);
+DEFINE_VISIT_ARRAY(ClassBody, GetChildren())
 DEFINE_VISIT_2(GlobVarDef, GetType(), GetName())
+DEFINE_VISIT_2(ClassDef, GetName(), GetBody());
 
 void BaseVisitor::visit(FuncDef* n, bool last){
 	INNODE;

@@ -33,10 +33,15 @@ class StmtIfThenElse;
 class StmtFuncCall;
 class StmtVarDecl;
 class StmtBlock;
+//Class
+class ClassBody;
+class ClassMember;
+class ClassVar;
 //GlobalStmt
 class GlobalStmt;
 class GlobVarDef;
 class FuncDef;
+class ClassDef;
 //Others
 class StartBlock;
 class IdentList;
@@ -78,10 +83,16 @@ public:
 	ADD_VISITEE(StmtVarDecl, Stmt);
 	ADD_VISITEE(StmtBlock, Stmt);
 
+	//Class
+	ADD_VISITEE(ClassBody, ASTNode);
+	ADD_VISITEE(ClassMember, ASTNode);
+	ADD_VISITEE(ClassVar, ClassMember);
+
 	//GlobalStmt
 	ADD_VISITEE(GlobalStmt, ASTNode);
 	ADD_VISITEE(GlobVarDef, GlobalStmt);
 	ADD_VISITEE(FuncDef, GlobalStmt);
+	ADD_VISITEE(ClassDef, GlobalStmt);
 
 	//Others
 	ADD_VISITEE(ArgList, ASTNode);

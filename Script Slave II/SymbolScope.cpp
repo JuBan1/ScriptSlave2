@@ -23,8 +23,10 @@ std::string Symbol::GetSignature() const {
 	}
 	case VARIABLE:	return name + " : " + varNode->GetType()->GetTypeInfo()->name;
 	case GLOBAL_VAR: return  name + " : " + globVarNode->GetType()->GetTypeInfo()->name;
+	case CLASS_VAR: return  name + " : " + classVarNode->GetType()->GetTypeInfo()->name;
 	case PARAMETER: return name + " : " + paramNode->GetType()->GetTypeInfo()->name;
 	case RETURN_VALUE: return name + " : " + retTypeNode->GetTypeInfo()->name;
+	case CLASS: return name + " : " + "class";
 	default: throw std::invalid_argument("Invalid type of Symbol");
 	}
 }
@@ -50,6 +52,7 @@ Symbol const* SymbolScope::GetSymbol(std::string name, PreferredSymbol ps) const
 		(it->second.type == Symbol::VARIABLE ||
 		it->second.type == Symbol::PARAMETER ||
 		it->second.type == Symbol::GLOBAL_VAR ||
+		it->second.type == Symbol::CLASS_VAR ||
 		it->second.type == Symbol::RETURN_VALUE))
 		return &it->second;
 	else if (ps == Any)
@@ -88,71 +91,3 @@ SymbolScope* SymbolScope::GetSubScope(std::string name) {
 
 	return &it->second;
 }
-
-/*
-class SymbolAccum : public BaseVisitor{
-public:
-	SymbolScope* m_symbolScope;
-
-	std::string scopeName = "";
-
-	bool inNode( ClassField* n, bool last ){ 
-		for( auto&& v : n->GetVarList()->GetChildren() )
-			std::cout << "\tfield\t" + n->GetType()->GetName() + "\t" + scopeName + "." + v->GetName() + "\n";
-		return false; 
-	}
-
-	bool inNode( Param* n, bool last ){
-		std::cout << "\tparam\t" + n->GetType()->GetName() + "\t" + scopeName + "." + n->GetName()->GetName() + "\n";
-		return false;
-	}
-
-	bool inNode( StmtVarDecl* n, bool last ){
-		for( auto&& v : n->GetVarList()->GetChildren() )
-			std::cout << "\tvar\t" + n->GetType()->GetName()  + "\t" + scopeName + "." + v->GetName() + "\n";
-		return false;
-	}
-
-
-	void visit( ClassMethod* n, bool last ){
-		std::string oldScopeName = scopeName;
-		scopeName += "." + n->GetNameRef()->GetName();
-
-		std::cout << "\nmethod scope " + scopeName + "\n";
-
-		std::cout << "\tmethod\t" + n->GetReturnType()->GetName() + "\t" + oldScopeName + "." + n->GetName()->GetNodeAsString() + "\t(";
-
-		for( auto&& v : n->GetParamList()->GetChildren() ){
-			std::cout << v->GetType()->GetName() + ",";
-		}
-		std::cout << + ")\n";
-
-		BaseVisitor::visit( n, last );
-		scopeName = oldScopeName;
-	}
-
-	void visit( ClassNode* n, bool last ){
-		std::string oldScopeName = scopeName;
-		scopeName += "." + n->GetNameRef()->GetName();
-
-		SymbolScope* parent = m_symbolScope;
-		m_symbolScope = &(parent->SetSubScope( n->GetName()->GetName() ));
-		
-
-		//std::cout << "\nclass scope " + scopeName + "\n";
-		BaseVisitor::visit( n, last );
-
-		m_symbolScope = parent;
-		scopeName = oldScopeName;
-	}
-
-public:
-	void visit( StartBlock* n, bool last ){
-		m_symbolScope = new SymbolScope(); //global scope
-
-		BaseVisitor::visit( n, last );
-	}
-
-};
-
-*/

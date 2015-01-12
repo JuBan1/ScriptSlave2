@@ -24,7 +24,9 @@ public:
 		VARIABLE,
 		PARAMETER,
 		GLOBAL_VAR,
-		RETURN_VALUE
+		CLASS_VAR,
+		RETURN_VALUE,
+		CLASS
 	};
 
 	SymbolType type;
@@ -38,8 +40,10 @@ public:
 		case FUNCTION:		return funcNode->GetRetType()->GetTypeInfo();
 		case VARIABLE:		return varNode->GetType()->GetTypeInfo();
 		case GLOBAL_VAR:	return globVarNode->GetType()->GetTypeInfo();
+		case CLASS_VAR:		return classVarNode->GetType()->GetTypeInfo();
 		case PARAMETER:		return paramNode->GetType()->GetTypeInfo();
 		case RETURN_VALUE:	return retTypeNode->GetTypeInfo();
+		case CLASS:			return nullptr;
 		default: throw std::invalid_argument("Invalid type of Symbol");
 		}
 	}
@@ -67,6 +71,14 @@ public:
 		return Symbol(GLOBAL_VAR, globVarNode->GetName()->GetName(), globVarNode);
 	}
 
+	static Symbol CreateClassVariableSymbol(ClassVar const* cVarNode){
+		return Symbol(CLASS_VAR, cVarNode->GetName()->GetName(), cVarNode);
+	}
+
+	static Symbol CreateClassSymbol(ClassDef const* cNode){
+		return Symbol(CLASS, cNode->GetName()->GetName(), cNode);
+	}
+
 	static Symbol CreateParamSymbol(Param const* paramNode){
 		return Symbol(PARAMETER, paramNode->GetName()->GetName(), paramNode);
 	}
@@ -84,6 +96,8 @@ private:
 		GlobVarDef const* globVarNode;
 		Type const* retTypeNode;
 		Param const* paramNode;
+		ClassVar const* classVarNode;
+		ClassDef const* classNode;
 	};
 
 	Symbol(SymbolType t, std::string name, ASTNode const* node)
@@ -149,15 +163,13 @@ public:
 	Symbol const*	GetSymbol( std::string name, PreferredSymbol ps = Any ) const;
 	bool			AddSymbol( std::string name, Symbol );
 
-	//const std::map<std::string, std::unique_ptr<Symbol>>& GetAllVariables() const { return m_symbols; };
-
 	SymbolScope* GetParentScope() const { return m_parent; }
 
 	const SymbolScope* GetSubScope( std::string name ) const;
 	SymbolScope* GetSubScope(std::string name);
 
 	bool AddSubScope(std::string name){
-		if (GetSubScope(name)) //No redeclared scopes
+		if (GetSubScope(name)) //Return if scope already exists
 			return false;
 
 		auto k = m_subScopes.emplace(name, SymbolScope(name, this));
